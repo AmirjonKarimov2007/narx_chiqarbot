@@ -134,7 +134,7 @@ async def print_data(call: types.CallbackQuery):
 
     usd_match = re.search(r"🇺🇸 USD: ([\d.]+)", caption)
     usd_price = usd_match.group(1) if usd_match else "Noma'lum"
-    name = name[:40] + f"|{shortcode}"
+    name = name[:25] + f"|{shortcode}"
 
     if barcode=="Noma'lum":
         number = code.rsplit("/")

@@ -26,14 +26,13 @@ async def update_document(template_path, new_file_path, name, price, usd_price, 
         if "Mahsulotnomi" in para.text:
             para.text = ""
             run = para.add_run(f"{name} / {usd_price}")
-            run.font.size = Pt(7)
+            run.font.size = Pt(8)
             run.bold = True
-            para.alignment = WD_ALIGN_PARAGRAPH.CENTER
             para.paragraph_format.left_indent = Cm(0.30)
         if "50000" in para.text:
             para.text = ""
-            run = para.add_run(f"   {price} сум")
-            run.font.size = Pt(17)
+            run = para.add_run(f"   {price} sсум")
+            run.font.size = Pt(16)
             run.bold = True
             para.alignment = WD_ALIGN_PARAGRAPH.CENTER
     
@@ -44,15 +43,15 @@ async def update_document(template_path, new_file_path, name, price, usd_price, 
         run.add_picture(barcode_image_path, width=Cm(3), height=Cm(1.5))
     await asyncio.to_thread(doc.save, new_file_path)
 
-
 import time
 async def print_document(file_path, pages=1):
     """ Hujjatni chop etish """
+    
     printer_name = win32print.GetDefaultPrinter()
     for _ in range(pages):
         pyautogui.press('enter')
         await asyncio.to_thread(win32api.ShellExecute, 0, "print", file_path, f'/d:"{printer_name}"', ".", 0)
-        time.sleep(2.5)
+        time.sleep(3)
         pyautogui.press('enter')
 import time
 async def print_barcode(word_name, data_to_encode, name, price, usd_price, barcode_name='barcode.png', page=1):
