@@ -1,16 +1,20 @@
-import os
-import sys
-from dotenv import load_dotenv
+import win32com.client
 
-# Loyiha asosiy papkasini sys.path ga qo‘shamiz
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(BASE_DIR)
+# Word ilovasini ishga tushurish
+word = win32com.client.Dispatch("Word.Application")
+word.Visible = False  # Word ilovasini foydalanuvchiga ko'rsatmaslik
 
-# .env faylni yuklash
-load_dotenv()
+# Word faylini to'g'ri yo'l bilan ochish
+doc_path = r"C:\Users\user\Documents\narx_chiqarbot-main\bot\aaa.docx"  # Faylning to'liq yo'li
+doc = word.Documents.Open(doc_path)
 
-# app.py faylni ishga tushirish
-from bot.app import executor, dp, on_startup
+# Sahifa o'lchamlarini o'zgartirish (40mm x 30mm)
+doc.PageSetup.PageWidth = 40  # 40mm
+doc.PageSetup.PageHeight = 30  # 30mm
 
-if __name__ == '__main__':
-    executor.start_polling(dp, on_startup=on_startup)
+# Faylni chop etish
+doc.PrintOut()
+
+# Word ilovasini yopish
+doc.Close()
+word.Quit()

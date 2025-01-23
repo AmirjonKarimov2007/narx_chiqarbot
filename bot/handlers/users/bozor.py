@@ -91,7 +91,7 @@ async def search_product(message: types.Message):
             markup.insert(InlineKeyboardButton(text="➖", callback_data=f"remove_page"))
             markup.insert(InlineKeyboardButton(text="🖨Chiqarish✅", callback_data=f"narx_chiqar:{barcode}"))
             markup.insert(InlineKeyboardButton(text="➕", callback_data=f"add_page"))
-            if price != "Noma’lum":
+            if price != "Noma'lum" and  price is not None and  price != "None":
                 await message.answer(response_text, reply_markup=markup)
             
             response_text = ""
@@ -134,17 +134,18 @@ async def print_data(call: types.CallbackQuery):
 
     usd_match = re.search(r"🇺🇸 USD: ([\d.]+)", caption)
     usd_price = usd_match.group(1) if usd_match else "Noma'lum"
-    name = name[:25] + f"|{shortcode}"
+    try:
+        if barcode=="Noma'lum":
+            number = code.rsplit("/")
+            barcode = number[1].rsplit(" ")[1]
+    except:
+        barcode="0000000000"
+    if uzs_price == "Noma'lum" or uzs_price is None or uzs_price == "None":
+        await call.answer("❌Mahsulot narxi nomalum.")
 
-    if barcode=="Noma'lum":
-        number = code.rsplit("/")
-        barcode = number[1].rsplit(" ")[1]
-
-
-
-
-
+        return
     await call.answer("✅ Narx qog'ozi chiqarish muvaffiyatli boshlandi.")
+    
     await print_barcode(
         word_name=call.message.message_id,
         data_to_encode=barcode, 
