@@ -8,7 +8,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 import barcode
 from barcode.writer import ImageWriter
 import pyautogui
-
+import win32com.client
 def generate_barcode(data, filename='barcode.png'):
     """ Shtrixkod yaratish va saqlash """
     barcode_class = barcode.get_barcode_class('code128')
@@ -47,24 +47,57 @@ async def update_document(template_path, new_file_path, name, price, usd_price, 
     save_path = os.path.join("documents", new_file_path)
     await asyncio.to_thread(doc.save, save_path)
     return save_path
+import asyncio
+import os
+import win32print
+import win32com.client
+import concurrent.futures
+import pythoncom
 
-import time
 async def print_document(file_path, pages=1):
-    printer_name = win32print.GetDefaultPrinter()
-    for _ in range(pages):
-        pyautogui.press('enter')
-        await asyncio.to_thread(win32api.ShellExecute, 0, "print", file_path, f'/d:"{printer_name}"', ".", 0)
-        time.sleep(3)
-        pyautogui.press('enter')
+    file_path = fr"C:\Users\user\Documents\narx_chiqarbot-main\bot\{file_path}"
+    
+    if os.path.exists(file_path):
+        try:
+            # Asinxron ishlash uchun thread ishlatish
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(None, _print_document_sync, file_path, pages)
+        except Exception as e:
+            print(f"Chop etishda xatolik yuz berdi: {e}")
+    else:
+        print("Fayl topilmadi!")  
+
+def _print_document_sync(file_path, pages):
+    try:
+        # COMni to'g'ri boshlash uchun CoInitialize chaqiramiz
+        pythoncom.CoInitialize()
+
+        # Chop etish uchun printerni sozlash
+        printer_name = "Xprinter XP-303B (копия 1)"
+        win32print.SetDefaultPrinter(printer_name) 
+        
+        # Microsoft Word dasturini ishga tushurish
+        word = win32com.client.Dispatch("Word.Application")
+        word.Visible = False
+        doc = word.Documents.Open(file_path)
+        
+        # Chop etiladigan nusxalar sonini belgilash
+        doc.PrintOut(Copies=pages)
+        
+        doc.Close(False)
+        word.Quit()
+        pythoncom.CoUninitialize()
+        return True
+    except Exception as e:
+        return False
+
 
 async def print_barcode(word_name, data_to_encode, name, price, usd_price, barcode_name='barcode.png', page=1):
     try:
         new_file_path = f'{word_name}.docx'
         barcode_image_path = await asyncio.to_thread(generate_barcode, data_to_encode, barcode_name)
         saved_file_path = await update_document('aaa.docx', new_file_path, name, price, usd_price, barcode_image_path)
-        
         await print_document(saved_file_path, page)
-        time.sleep(1)  
         os.remove(f"{barcode_name}.png.png")
         return True
     except Exception as e:
