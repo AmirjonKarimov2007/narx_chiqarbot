@@ -146,7 +146,7 @@ async def print_data(call: types.CallbackQuery):
         return
     await call.answer("✅ Narx qog'ozi chiqarish muvaffiyatli boshlandi.")
     
-    await print_barcode(
+    a = await print_barcode(
         word_name=call.message.message_id,
         data_to_encode=barcode, 
         name=name, 
@@ -155,7 +155,7 @@ async def print_data(call: types.CallbackQuery):
         usd_price=usd_price, 
         page=pages
     )
-    if 1==1:
+    if a:
         try:
             await call.answer("✅ Narx qog'ozi chiqarish muvaffiyatli boshlandi.")
         except:
