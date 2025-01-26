@@ -13,57 +13,71 @@ import re
 from progress import print_barcode
 from aiogram import types
 
-@dp.message_handler(IsAdmin(), content_types=types.ContentType.TEXT, state='*')
-async def search_product(message: types.Message):
-    user_input = message.text.strip()
-    tim = await message.answer(text="⏳")
+import io
+import json
+import re
+from pyzbar.pyzbar import decode
+from PIL import Image
+from aiogram import types
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
+
+
+
+async def get_product_by_barcode(user_input):
     try:
         with open('updated_data.json', 'r', encoding='utf-8') as file:
             data = json.load(file)
     except FileNotFoundError:
-        await message.answer("Xatolik: updated_data.json fayli topilmadi!")
-        return
+        return "Xatolik: updated_data.json fayli topilmadi!"
     except json.JSONDecodeError:
-        await message.answer("Xatolik: JSON fayl noto‘g‘ri formatda!")
-        return
+        return "Xatolik: JSON fayl noto‘g‘ri formatda!"
 
-    # Qidirish shartlarini aniqlash
     found_products = []
+    
     if user_input.isdigit():  
         for product in data["inventory"]:
             barcode = product.get("barcodes", "") or ""
             inventory_code = product.get("code", "") or ""  
 
             last_6_digits = barcode[-6:] if len(barcode) >= 6 else barcode
-
-            # inventory_code ichidan faqat raqamlarni olish
             inventory_digits = "".join(re.findall(r'\d+', inventory_code))
 
-            # Qidiruv shartlari
             if user_input in barcode or user_input == last_6_digits or user_input in inventory_digits:
                 found_products.append(product)
-                
-    else:  # Harf yoki "-" belgisi bo‘lsa, faqat article_code va name dan qidirish
+
+    else:
         user_input_lower = user_input.lower()
-        exact_match = []  # Aniq mos keladiganlar
-        partial_match = []  # Qisman mos keladiganlar
+        exact_match = []
+        partial_match = []
 
         for product in data["inventory"]:
             article_code = (product.get("article_code", "") or "").lower()
             name = (product.get("name", "") or "").lower()
 
             if user_input_lower == article_code or user_input_lower == name:
-                exact_match.append(product)  # Aniq mos keladigan mahsulot
+                exact_match.append(product)
             elif user_input_lower in article_code or user_input_lower in name:
-                partial_match.append(product)  # Qisman mos keladigan mahsulot
+                partial_match.append(product)
 
-        # Birinchi aniq mos tushgan mahsulotlarni qo‘shamiz
         found_products.extend(exact_match)
-
-        # Keyin boshqa qisman mos tushadigan mahsulotlarni qo‘shamiz
         found_products.extend(partial_match)
 
-    # Natijalarni jo‘natish
+    return found_products if found_products else None
+
+# Matn orqali mahsulotni qidirish
+@dp.message_handler(IsAdmin(), content_types=types.ContentType.TEXT, state='*')
+async def get_text(message: types.Message):
+    user_input = message.text.strip()
+    tim = await message.answer(text="⏳")
+
+    found_products = await get_product_by_barcode(user_input)
+
+    if isinstance(found_products, str):  # Xatolik xabari bo'lsa
+        await tim.delete()
+        await message.answer(found_products)
+        return
+
     if found_products:
         await tim.delete()
         response_text = "📌 Topilgan mahsulotlar:\n\n"
@@ -91,17 +105,123 @@ async def search_product(message: types.Message):
             markup.insert(InlineKeyboardButton(text="➖", callback_data=f"remove_page"))
             markup.insert(InlineKeyboardButton(text="🖨Chiqarish✅", callback_data=f"narx_chiqar:{barcode}"))
             markup.insert(InlineKeyboardButton(text="➕", callback_data=f"add_page"))
-            if price != "Noma'lum" and  price is not None and  price != "None":
-                await message.answer(response_text, reply_markup=markup)
+
+            if price != "Noma'lum" and price is not None and price != "None":
+                await message.answer(response_text)
             
             response_text = ""
             if idx > 9:
                 return
 
         if response_text:
-            await message.answer(response_text, parse_mode="Markdown", reply_markup=markup)
+            await message.answer(response_text, parse_mode="Markdown")
     else:
-        await message.answer("❌ Bunday mahsulot mavjud emas!")  
+        await message.answer("❌ Bunday mahsulot mavjud emas!")
+
+import io
+import cv2
+import numpy as np
+import json
+import re
+from pyzbar.pyzbar import decode
+from PIL import Image
+from aiogram import types
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
+# Tasvir sifatini yaxshilash uchun OpenCV filtrlar
+def enhance_image(image):
+    img = np.array(image)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)  # Oq-qora formatga o'tkazish
+    enhanced = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                     cv2.THRESH_BINARY, 31, 2)  # Kontrastni oshirish
+    return Image.fromarray(enhanced)
+
+# Rasm orqali shtrix-kodni qidirish
+@dp.message_handler(IsAdmin(), content_types=types.ContentType.PHOTO, state='*')
+async def get_photo(message: types.Message):
+    tim = await message.answer(text="📸 Shtrix-kod skan qilinmoqda...")
+
+    photo = message.photo[-1]
+    photo_bytes = io.BytesIO()
+    await photo.download(destination_file=photo_bytes)
+
+    photo_bytes.seek(0)
+    image = Image.open(photo_bytes)
+
+    # Tasvir sifatini oshirish
+    enhanced_image = enhance_image(image)
+
+    # Shtrix-kodni o'qish
+    decoded_objects = decode(enhanced_image)
+    if not decoded_objects:
+        await tim.delete()
+        await message.answer("❌ Rasm ichida shtrix-kod topilmadi!")
+        return
+
+    barcode_text = decoded_objects[0].data.decode("utf-8")  # Birinchi topilgan shtrix-kod
+    found_products = await get_product_by_barcode(barcode_text)
+
+    if isinstance(found_products, str):
+        await tim.delete()
+        await message.answer(found_products)
+        return
+
+    if found_products:
+        await tim.delete()
+        response_text = f"📌 QR-kod: <code>{barcode_text}</code>\n\n📌 Topilgan mahsulotlar:\n\n"
+        for idx, product in enumerate(found_products, start=1):
+            response_text += (
+                f"🔹 <b>{idx}.</b>\n"
+                f"🆔 Product ID: {product.get('product_id')}\n"
+                f"🔢 Code: <code>{product.get('code')}</code>\n"
+                f"📛 Name: {product.get('name')}\n"
+                f"✏️ Short Name: <code>{product.get('short_name')}</code>\n"
+                f"🛒 Article Code: <code>{product.get('article_code') or 'Mavjud emas'}</code>\n"
+                f"📌 Barcodes: <code>{product.get('barcodes') or 'Mavjud emas'}</code>\n"
+                f"💰 Narxlar:\n"
+                f"📑 Sahifalar Soni:1\n"
+                f"🇺🇿 UZS: {product.get('price_uzs', 'Noma’lum')}\n"
+                f"🇺🇸 USD: {product.get('price_usd', 'Noma’lum')}\n\n"
+            )
+
+            barcode = str(product.get('barcodes'))
+            price = product.get('price_uzs', 'Noma’lum')
+            if isinstance(barcode, str) and '|' in barcode:
+                barcode = barcode.split("|")[0]
+
+            markup = InlineKeyboardMarkup(row_width=3)
+            markup.insert(InlineKeyboardButton(text="➖", callback_data=f"remove_page"))
+            markup.insert(InlineKeyboardButton(text="🖨Chiqarish✅", callback_data=f"narx_chiqar:{barcode}"))
+            markup.insert(InlineKeyboardButton(text="➕", callback_data=f"add_page"))
+
+            if price != "Noma'lum" and price is not None and price != "None":
+                await message.answer(response_text, reply_markup=markup)
+                await message.answer(response_text)
+
+            response_text = ""
+            if idx > 9:
+                return
+
+        if response_text:
+            await message.answer(response_text, parse_mode="Markdown")
+    else:
+        await tim.delete()
+        await message.answer("❌ Bunday shtrix-kodli mahsulot mavjud emas!")
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
 
 @dp.callback_query_handler(IsAdmin(), text_contains='narx_chiqar:', state='*')
 async def print_data(call: types.CallbackQuery):
@@ -217,3 +337,4 @@ async def new(message: types.Message):
         await message.answer(text="✅Baza muvaffaqiyatli yangilandi")
     else:
         await message.answer(text="❌Baza yangilanmadi")
+
