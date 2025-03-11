@@ -87,7 +87,7 @@ async def get_text(message: types.Message):
                 f"🔢 Code: <code>{product.get('code')}</code>\n"
                 f"📛 Name: {product.get('name')}\n"
                 f"✏️ Short Name: <code>{product.get('short_name')}</code>\n"
-                f"🛒 Article Code: <code>{product.get('article_code') or 'Mavjud emas'}</code>\n"
+                f"🛒 Article Code: {product.get('article_code') or 'Mavjud emas'}\n"
                 f"📌 Barcodes: <code>{product.get('barcodes') or 'Mavjud emas'}</code>\n"
                 f"💰 Narxlar:\n"
                 f"📑 Sahifalar Soni:1\n"
@@ -102,8 +102,10 @@ async def get_text(message: types.Message):
 
             markup = InlineKeyboardMarkup(row_width=3)
             markup.insert(InlineKeyboardButton(text="➖", callback_data=f"remove_page"))
-            markup.insert(InlineKeyboardButton(text="🖨Chiqarish✅", callback_data=f"narx_chiqar:{barcode}"))
+            markup.insert(InlineKeyboardButton(text="🖨Chiqarish✅", callback_data=f"narx_chiqar:{barcode}:narx"))
             markup.insert(InlineKeyboardButton(text="➕", callback_data=f"add_page"))
+            markup.insert(InlineKeyboardButton(text="🏷Chiqarish✅", callback_data=f"narx_chiqar:{barcode}:barcode"))
+
 
             if price != "Noma'lum" and price is not None and price != "None":
                 await message.answer(response_text,reply_markup=markup)
@@ -117,12 +119,13 @@ async def get_text(message: types.Message):
     else:
         await message.answer("❌ Bunday mahsulot mavjud emas!")
 
-
+from barcode_printer import print_barcode_barcode
 
 @dp.callback_query_handler(IsAdmin(), text_contains='narx_chiqar:', state='*')
 async def print_data(call: types.CallbackQuery):
 
     barcode = call.data.rsplit(":", 1)[1]
+    type = call.data.rsplit(":")[2]
     caption = call.message.text
     # Kod
     code_match = re.search(r"🔢 Code: ([A-Za-z0-9\-/ ]+)", caption)
@@ -161,23 +164,38 @@ async def print_data(call: types.CallbackQuery):
 
         return
     await call.answer("✅ Narx qog'ozi chiqarish muvaffiyatli boshlandi.")
-    
-    a = await print_barcode(
-        word_name=call.message.message_id,
-        data_to_encode=barcode, 
-        name=name, 
-        price=uzs_price, 
-        barcode_name=f'{call.id}.png', 
-        usd_price=usd_price, 
-        page=pages
-    )
-    if a:
-        try:
-            await call.answer("✅ Narx qog'ozi chiqarish muvaffiyatli boshlandi.")
-        except:
-            pass
+    if type=='narx':
+        a = await print_barcode(
+            word_name=call.message.message_id,
+            data_to_encode=barcode, 
+            name=name, 
+            price=uzs_price, 
+            barcode_name=f'{call.id}.png', 
+            usd_price=usd_price, 
+            page=pages
+        )
+        if a:
+            try:
+                await call.answer("✅ Narx qog'ozi chiqarish muvaffiyatli boshlandi.")
+            except:
+                pass
+        else:
+            await call.answer("❌Narx chiqarib bo'lmadi.", show_alert=True)
     else:
-        await call.answer("❌Narx chiqarib bo'lmadi.", show_alert=True)
+        a = await print_barcode_barcode(
+            word_name=call.message.message_id,
+            data_to_encode=barcode, 
+            name=shortcode, 
+            barcode_name=f'{call.id}.png', 
+            page=pages
+        )
+        if a:
+            try:
+                await call.answer("✅ Barcode qog'ozi chiqarish muvaffiyatli boshlandi.")
+            except:
+                pass
+        else:
+            await call.answer("❌Barcode chiqarib bo'lmadi.", show_alert=True)
 
 
     

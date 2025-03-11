@@ -96,4 +96,3 @@ def do_all():
         print("Xatolik bor.")
         return False
 
-# do_all()

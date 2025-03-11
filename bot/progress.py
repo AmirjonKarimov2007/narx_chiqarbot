@@ -4,7 +4,7 @@ import win32print
 from docx import Document
 from docx.shared import Pt, Cm
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-import barcode
+import barcode as barcode
 from barcode.writer import ImageWriter
 import win32com.client
 import psutil
@@ -61,9 +61,6 @@ async def update_document(template_path, new_file_path, name, price, usd_price, 
     await asyncio.to_thread(doc.save, save_path)
     return save_path
 
-
-
-
 async def print_document(file_path, copies=1):
     kill_task()
     file_path = fr"C:\Users\alfatech.uz\Documents\narx_chiqarbot\bot\{file_path}"
@@ -85,7 +82,7 @@ def _print_document_sync(file_path, copies):
         word.Visible = False
         doc = word.Documents.Open(file_path)
 
-        word.ActivePrinter = "Xprinter XP-303B (копия 1)"
+        word.ActivePrinter = "Xprinter XP-303B"
 
         for _ in range(copies):
             doc.PrintOut()
@@ -98,7 +95,6 @@ def _print_document_sync(file_path, copies):
     except Exception as e:
         print(f"❌ Xatolik: {e}")
         return False  
-
 
 async def print_barcode(word_name, data_to_encode, name, price, usd_price, barcode_name='barcode.png', page=1):
     try:

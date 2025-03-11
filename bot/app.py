@@ -15,7 +15,7 @@ import time
 async def on_startup(dispatcher):
     await db.create()
     try:
-        do_all()
+        # do_all()
         await db.create_table_channel()
         await db.create_table_admins()
         await db.create_table_files()
