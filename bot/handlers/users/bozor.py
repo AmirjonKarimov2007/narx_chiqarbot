@@ -22,6 +22,8 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
 
+import json
+import re
 
 async def get_product_by_barcode(user_input):
     try:
@@ -33,19 +35,30 @@ async def get_product_by_barcode(user_input):
         return "Xatolik: JSON fayl noto‘g‘ri formatda!"
 
     found_products = []
+    search_type = None  # Qidiruv turini saqlash uchun o'zgaruvchi
     
     if user_input.isdigit():  
+        search_type = "barcode"
         for product in data["inventory"]:
             barcode = product.get("barcodes", "") or ""
             inventory_code = product.get("code", "") or ""  
 
             last_6_digits = barcode[-6:] if len(barcode) >= 6 else barcode
             inventory_digits = "".join(re.findall(r'\d+', inventory_code))
-
+            a = []
             if user_input in barcode or user_input == last_6_digits or user_input in inventory_digits:
+                try:
+                    barcodes =  barcode.rsplit("|")
+                    for bar in barcodes:
+                        if user_input in bar:
+                            product['barcodes'] = bar
+                            print(product['barcodes'])
+                except:
+                    pass
                 found_products.append(product)
 
     else:
+        search_type = "nom"
         user_input_lower = user_input.lower()
         exact_match = []
         partial_match = []
@@ -62,8 +75,15 @@ async def get_product_by_barcode(user_input):
         found_products.extend(exact_match)
         found_products.extend(partial_match)
 
-    return found_products if found_products else None
-
+    if found_products:
+        if search_type == "barcode":
+            print("Barcode orqali topildi!")
+        elif search_type == "nom":
+            print("Nom orqali topildi!")
+        return found_products
+    else:
+        print("Hech narsa topilmadi!")
+        return None
 # Matn orqali mahsulotni qidirish
 @dp.message_handler(IsAdmin(), content_types=types.ContentType.TEXT, state='*')
 async def get_text(message: types.Message):
@@ -104,7 +124,10 @@ async def get_text(message: types.Message):
             markup.insert(InlineKeyboardButton(text="➖", callback_data=f"remove_page"))
             markup.insert(InlineKeyboardButton(text="🖨Chiqarish✅", callback_data=f"narx_chiqar:{barcode}:narx"))
             markup.insert(InlineKeyboardButton(text="➕", callback_data=f"add_page"))
+            markup.insert(InlineKeyboardButton(text="➖50-", callback_data=f"remove_50"))
             markup.insert(InlineKeyboardButton(text="🏷Chiqarish✅", callback_data=f"narx_chiqar:{barcode}:barcode"))
+            markup.insert(InlineKeyboardButton(text="➕50+", callback_data=f"add_50"))
+
 
 
             if price != "Noma'lum" and price is not None and price != "None":
@@ -241,6 +264,57 @@ async def add_page(call: types.CallbackQuery):
             print("Sahifalar Soni topilmadi.")
     except Exception as e:
         return
+
+
+
+        
+@dp.callback_query_handler(IsAdmin(),text="add_50",state='*')
+async def add_page(call: types.CallbackQuery):
+    caption = call.message.text
+    match = re.search(r"📑 Sahifalar Soni:(\d+)", caption)
+    try:
+        if match:
+            pages = match.group(1) 
+            pages = int(pages) + 50
+            new_caption = re.sub(r"📑 Sahifalar Soni:\d+", f"📑 Sahifalar Soni:<b>{pages}</b>", caption)
+            markup = call.message.reply_markup
+            try:
+                await call.answer("✅ Sahifalar soni qo'shildi")
+            except:
+                await call.answer("✅ Sahifalar soni 1taga yangilandi.")
+
+            await call.message.edit_text(new_caption,reply_markup=markup)
+        else:
+            print("Sahifalar Soni topilmadi.")
+    except Exception as e:
+        print(e)
+        pass
+
+@dp.callback_query_handler(IsAdmin(),text="remove_50",state='*')
+async def add_page(call: types.CallbackQuery):
+    caption = call.message.text
+    match = re.search(r"📑 Sahifalar Soni:(\d+)", caption)
+    try:
+        if match:
+            pages = match.group(1) 
+            if int(pages)>=1:
+                pages = int(pages) - 50
+                new_caption = re.sub(r"📑 Sahifalar Soni:\d+", f"📑 Sahifalar Soni:<b>{pages}</b>", caption)
+                markup = call.message.reply_markup
+                await call.answer("✅ Sahifalar soni 1taga olib tashlandi.")
+                await call.message.edit_text(new_caption,reply_markup=markup)
+            else:
+                await call.answer("❌ Sahifalar soni olib tashlanmadi. maksimal kamayish miqdori 1ga teng")
+        else:
+            print("Sahifalar Soni topilmadi.")
+    except Exception as e:
+        return
+
+
+
+
+
+
 
 
 from main import do_all
