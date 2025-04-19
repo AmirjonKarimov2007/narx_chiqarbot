@@ -37,8 +37,7 @@ async def update_document(template_path, new_file_path, name, barcode_image_path
     
     if os.path.exists(barcode_image_path):
         run = first_paragraph.add_run()
-        run.add_picture(barcode_image_path, width=Cm(2.8), height=Cm(1.6))
-        first_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run.add_picture(barcode_image_path, width=Cm(3), height=Cm(1.6))
     
     os.makedirs("documents", exist_ok=True)
     save_path = os.path.join("documents", new_file_path)

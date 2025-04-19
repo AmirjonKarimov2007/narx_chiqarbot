@@ -8,8 +8,8 @@ import barcode as barcode
 from barcode.writer import ImageWriter
 import win32com.client
 import psutil
-
 import pythoncom
+
 def kill_task():
     task_name = 'WORD.EXE'
     for proc in psutil.process_iter(['pid', 'name']):
@@ -110,3 +110,4 @@ async def print_barcode(word_name, data_to_encode, name, price, usd_price, barco
         if os.path.exists(f"{barcode_name}.png"):
             os.remove(f"{barcode_name}.png")
         return False
+

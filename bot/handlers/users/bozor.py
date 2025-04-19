@@ -84,6 +84,11 @@ async def get_product_by_barcode(user_input):
     else:
         print("Hech narsa topilmadi!")
         return None
+    
+
+from aiogram.types import InputFile
+from pathlib import Path
+
 # Matn orqali mahsulotni qidirish
 @dp.message_handler(IsAdmin(), content_types=types.ContentType.TEXT, state='*')
 async def get_text(message: types.Message):
@@ -131,14 +136,24 @@ async def get_text(message: types.Message):
 
 
             if price != "Noma'lum" and price is not None and price != "None":
-                await message.answer(response_text,reply_markup=markup)
-            
+                try:
+                    photo_path = Path("C:/Users/alfatech.uz/Documents/narx_chiqarbot/bot/rasmlar") / f"{product.get('product_id')}.jpg"
+                    await message.answer_photo(photo=InputFile(photo_path), caption=response_text, reply_markup=markup)
+                except Exception as e:
+                    print(e)
+                    await message.answer(response_text, reply_markup=markup)
+                            
             response_text = ""
             if idx > 9:
                 return
 
         if response_text:
-            await message.answer(response_text, parse_mode="Markdown",reply_markup=markup)
+            try:
+                photo_path = Path("C:/Users/alfatech.uz/Documents/narx_chiqarbot/bot/rasmlar") / f"{product.get('product_id')}.jpg"
+                await message.answer_photo(photo=InputFile(photo_path), caption=response_text, reply_markup=markup)
+            except Exception as e:
+                print(e)
+                await message.answer(response_text, reply_markup=markup)
     else:
         await message.answer("❌ Bunday mahsulot mavjud emas!")
 
