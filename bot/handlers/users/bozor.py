@@ -106,6 +106,7 @@ async def get_text(message: types.Message):
         await tim.delete()
         response_text = "📌 Topilgan mahsulotlar:\n\n"
         for idx, product in enumerate(found_products, start=1):
+            photo_url = product.get("image_url")
             response_text += (
                 f"🔹 <b>{idx}.</b>\n"
                 f"🆔 Product ID: {product.get('product_id')}\n"
@@ -115,7 +116,7 @@ async def get_text(message: types.Message):
                 f"🛒 Article Code: {product.get('article_code') or 'Mavjud emas'}\n"
                 f"📌 Barcodes: <code>{product.get('barcodes') or 'Mavjud emas'}</code>\n"
                 f"💰 Narxlar:\n"
-                f"📑 Sahifalar Soni:1\n"
+                f"📑 Sahifalar Soni:3\n"
                 f"🇺🇿 UZS: {product.get('price_uzs', 'Noma’lum')}\n"
                 f"🇺🇸 USD: {product.get('price_usd', 'Noma’lum')}\n\n"
             )
@@ -130,15 +131,14 @@ async def get_text(message: types.Message):
             markup.insert(InlineKeyboardButton(text="🖨Chiqarish✅", callback_data=f"narx_chiqar:{barcode}:narx"))
             markup.insert(InlineKeyboardButton(text="➕", callback_data=f"add_page"))
             markup.insert(InlineKeyboardButton(text="➖50-", callback_data=f"remove_50"))
-            markup.insert(InlineKeyboardButton(text="🏷Chiqarish✅", callback_data=f"narx_chiqar:{barcode}:barcode"))
+            markup.insert(InlineKeyboardButton(text="🏷Barcode✅", callback_data=f"narx_chiqar:{barcode}:barcode"))
             markup.insert(InlineKeyboardButton(text="➕50+", callback_data=f"add_50"))
 
 
 
             if price != "Noma'lum" and price is not None and price != "None":
                 try:
-                    photo_path = Path("C:/Users/alfatech.uz/Documents/narx_chiqarbot/bot/rasmlar") / f"{product.get('product_id')}.jpg"
-                    await message.answer_photo(photo=InputFile(photo_path), caption=response_text, reply_markup=markup)
+                    await message.answer_photo(photo=photo_url, caption=response_text, reply_markup=markup)
                 except Exception as e:
                     print(e)
                     await message.answer(response_text, reply_markup=markup)
@@ -149,8 +149,7 @@ async def get_text(message: types.Message):
 
         if response_text:
             try:
-                photo_path = Path("C:/Users/alfatech.uz/Documents/narx_chiqarbot/bot/rasmlar") / f"{product.get('product_id')}.jpg"
-                await message.answer_photo(photo=InputFile(photo_path), caption=response_text, reply_markup=markup)
+                await bot.send_photo(chat_id=message.from_user.id,photo=photo_url, caption=response_text, reply_markup=markup)
             except Exception as e:
                 print(e)
                 await message.answer(response_text, reply_markup=markup)
@@ -164,16 +163,22 @@ async def print_data(call: types.CallbackQuery):
 
     barcode = call.data.rsplit(":", 1)[1]
     type = call.data.rsplit(":")[2]
-    caption = call.message.text
+    if call.message.photo:
+        caption = call.message.caption
+    else:
+        caption = call.message.text
+
     # Kod
     code_match = re.search(r"🔢 Code: ([A-Za-z0-9\-/ ]+)", caption)
     code = code_match.group(1) if code_match else "Noma'lum"
     # Name
     name_match = re.search(r"📛 Name: (.+)", caption)
     name = name_match.group(1) if name_match else "Noma'lum"
-    
-    name_match = re.search(r"📛 Name: (.+)", caption)
-    name = name_match.group(1) if name_match else "Noma'lum"
+    if len(name)<60:
+        name = name
+    else:
+        name = name[-60:]
+   
     # Barcodes
     barcode_match = re.search(r"📌 Barcodes: (\d+)", caption)
     barcode = barcode_match.group(1) if barcode_match else "Noma'lum"
@@ -240,7 +245,10 @@ async def print_data(call: types.CallbackQuery):
         
 @dp.callback_query_handler(IsAdmin(),text="add_page",state='*')
 async def add_page(call: types.CallbackQuery):
-    caption = call.message.text
+    if call.message.photo:
+        caption = call.message.caption
+    else:
+        caption = call.message.text
     match = re.search(r"📑 Sahifalar Soni:(\d+)", caption)
     try:
         if match:
@@ -251,9 +259,12 @@ async def add_page(call: types.CallbackQuery):
             try:
                 await call.answer("✅ Sahifalar soni qo'shildi")
             except:
-                await call.answer("✅ Sahifalar soni 1taga yangilandi.")
+                await call.answer("✅ Sahifalar soni  yangilandi.")
 
-            await call.message.edit_text(new_caption,reply_markup=markup)
+            if call.message.photo:
+                    await call.message.edit_caption(new_caption,reply_markup=markup)
+            else:
+                await call.message.edit_text(new_caption,reply_markup=markup)
         else:
             print("Sahifalar Soni topilmadi.")
     except Exception as e:
@@ -262,8 +273,11 @@ async def add_page(call: types.CallbackQuery):
 
 @dp.callback_query_handler(IsAdmin(),text="remove_page",state='*')
 async def add_page(call: types.CallbackQuery):
-    caption = call.message.text
-    match = re.search(r"📑 Sahifalar Soni:(\d+)", caption)
+    if call.message.photo:
+        caption = call.message.caption
+    else:
+        caption = call.message.text
+    match = re.search(r"📑 Sahifalar Soni:(\d+)", caption)  
     try:
         if match:
             pages = match.group(1) 
@@ -271,21 +285,28 @@ async def add_page(call: types.CallbackQuery):
                 pages = int(pages) - 1
                 new_caption = re.sub(r"📑 Sahifalar Soni:\d+", f"📑 Sahifalar Soni:<b>{pages}</b>", caption)
                 markup = call.message.reply_markup
-                await call.answer("✅ Sahifalar soni 1taga olib tashlandi.")
-                await call.message.edit_text(new_caption,reply_markup=markup)
+                if call.message.photo:
+                    await call.message.edit_caption(new_caption,reply_markup=markup)
+                else:
+                    await call.message.edit_text(new_caption,reply_markup=markup)
+                await call.answer("✅ Sahifalar soni  olib tashlandi.")
             else:
                 await call.answer("❌ Sahifalar soni olib tashlanmadi. maksimal kamayish miqdori 1ga teng")
         else:
             print("Sahifalar Soni topilmadi.")
     except Exception as e:
-        return
+        print(e)
 
 
 
         
 @dp.callback_query_handler(IsAdmin(),text="add_50",state='*')
 async def add_page(call: types.CallbackQuery):
-    caption = call.message.text
+    if call.message.photo:
+        caption = call.message.caption
+    else:
+        caption = call.message.text
+
     match = re.search(r"📑 Sahifalar Soni:(\d+)", caption)
     try:
         if match:
@@ -298,7 +319,10 @@ async def add_page(call: types.CallbackQuery):
             except:
                 await call.answer("✅ Sahifalar soni 1taga yangilandi.")
 
-            await call.message.edit_text(new_caption,reply_markup=markup)
+            if call.message.photo:
+                await call.message.edit_caption(new_caption,reply_markup=markup)
+            else:
+                await call.message.edit_text(new_caption,reply_markup=markup)
         else:
             print("Sahifalar Soni topilmadi.")
     except Exception as e:
@@ -307,17 +331,24 @@ async def add_page(call: types.CallbackQuery):
 
 @dp.callback_query_handler(IsAdmin(),text="remove_50",state='*')
 async def add_page(call: types.CallbackQuery):
-    caption = call.message.text
+    if call.message.photo:
+        caption = call.message.caption
+    else:
+        caption = call.message.text
+
     match = re.search(r"📑 Sahifalar Soni:(\d+)", caption)
     try:
         if match:
             pages = match.group(1) 
-            if int(pages)>=1:
+            if int(pages)>=50:
                 pages = int(pages) - 50
                 new_caption = re.sub(r"📑 Sahifalar Soni:\d+", f"📑 Sahifalar Soni:<b>{pages}</b>", caption)
                 markup = call.message.reply_markup
-                await call.answer("✅ Sahifalar soni 1taga olib tashlandi.")
-                await call.message.edit_text(new_caption,reply_markup=markup)
+                await call.answer("✅ Sahifalar soni 50taga olib tashlandi.")
+                if call.message.photo:
+                    await call.message.edit_caption(new_caption,reply_markup=markup)
+                else:
+                    await call.message.edit_text(new_caption,reply_markup=markup)
             else:
                 await call.answer("❌ Sahifalar soni olib tashlanmadi. maksimal kamayish miqdori 1ga teng")
         else:

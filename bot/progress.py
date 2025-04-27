@@ -24,7 +24,7 @@ def kill_task():
 
 def generate_barcode(data, filename='barcode.png'):
     """ Shtrixkod yaratish va saqlash """
-    barcode_class = barcode.get_barcode_class('code128')
+    barcode_class = barcode.get_barcode_class('ean13')
     barcode_obj = barcode_class(data, writer=ImageWriter())
     return barcode_obj.save(filename, options={
         "module_height": 15.0,
@@ -54,7 +54,7 @@ async def update_document(template_path, new_file_path, name, price, usd_price, 
         paragraph = doc.add_paragraph()
         paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
         run = paragraph.add_run()
-        run.add_picture(barcode_image_path, width=Cm(3), height=Cm(1))
+        run.add_picture(barcode_image_path, width=Cm(4.2), height=Cm(1.5))
     
     os.makedirs("documents", exist_ok=True)
     save_path = os.path.join("documents", new_file_path)

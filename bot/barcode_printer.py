@@ -28,16 +28,17 @@ async def update_document(template_path, new_file_path, name, barcode_image_path
     
     first_paragraph = doc.paragraphs[0] if len(doc.paragraphs) > 0 else doc.add_paragraph()
     for para in doc.paragraphs:
-        if "MahsulotNomi" in para.text:
+        if "Mahsulotnomi" in para.text:
             para.text = ""
             run = para.add_run(f"{name}")
             run.font.size = Pt(7)
             run.bold = True
-            para.paragraph_format.left_indent = Cm(0.10)
+            para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
     
-    if os.path.exists(barcode_image_path):
+    if os.path.exists(barcode_image_path):  
         run = first_paragraph.add_run()
-        run.add_picture(barcode_image_path, width=Cm(3), height=Cm(1.6))
+        run.add_picture(barcode_image_path, width=Cm(4.2), height=Cm(2.7))
     
     os.makedirs("documents", exist_ok=True)
     save_path = os.path.join("documents", new_file_path)

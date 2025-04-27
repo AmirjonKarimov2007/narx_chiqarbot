@@ -1,0 +1,14 @@
+2025/04/27-10:26:21.980 3f34 Reusing MANIFEST C:\Users\alfatech.uz\Documents\narx_chiqarbot\bot\user_dataa\Default\IndexedDB\https_smartup.online_0.indexeddb.leveldb/MANIFEST-000001
+2025/04/27-10:26:21.980 3f34 Recovering log #82
+2025/04/27-10:26:21.980 3f34 Reusing old log C:\Users\alfatech.uz\Documents\narx_chiqarbot\bot\user_dataa\Default\IndexedDB\https_smartup.online_0.indexeddb.leveldb/000082.log 
+2025/04/27-10:26:21.981 3f34 Delete type=2 #80
+2025/04/27-10:26:22.813 3624 Level-0 table #87: started
+2025/04/27-10:26:22.815 3624 Level-0 table #87: 890 bytes OK
+2025/04/27-10:26:22.817 3624 Delete type=0 #82
+2025/04/27-10:26:22.817 3f34 Manual compaction at level-0 from '\x00\x1a\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\x1b\x00\x00\x00' @ 0 : 0; will stop at '\x00\x1a\x00\x00\x05' @ 1072 : 1
+2025/04/27-10:26:22.817 3f34 Compacting 1@0 + 1@1 files
+2025/04/27-10:26:22.819 3f34 Generated table #88@0: 83 keys, 1257 bytes
+2025/04/27-10:26:22.819 3f34 Compacted 1@0 + 1@1 files => 1257 bytes
+2025/04/27-10:26:22.820 3f34 compacted to: files[ 0 1 1 0 0 0 0 ]
+2025/04/27-10:26:22.820 3f34 Delete type=2 #87
+2025/04/27-10:26:22.820 3f34 Manual compaction at level-0 from '\x00\x1a\x00\x00\x05' @ 1072 : 1 .. '\x00\x1b\x00\x00\x00' @ 0 : 0; will stop at (end)

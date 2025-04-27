@@ -1,6 +1,71 @@
 import json
+import json
+import requests
+from requests.auth import HTTPBasicAuth
+def get_info_for_product():
+    url = "https://smartup.online/b/anor/mxsx/mr/inventory$export"
+
+    auth = HTTPBasicAuth('jamshidbek@falcon', '571++632')
+
+    headers = {
+        'filial_id': '5012602',
+        'project_id': 'trade',
+        'Content-Type': 'application/json'
+    }
+
+    data = {
+        "code": "",
+        "begin_created_on": "",
+        "end_created_on": "",
+        "begin_modified_on": "",
+        "end_modified_on": ""
+    }
+
+    response = requests.get(url, json=data, auth=auth, headers=headers)
+
+    if response.status_code == 200:
+        print("So'rov muvaffaqiyatli amalga oshirildi.")
+        
+        # JSON ma'lumotlarini dekodlash
+        response_dict = response.json()
+
+        # Ma'lumotlarni tartibli JSON faylga yozish va Unicode belgilarni to'g'ri ko'rsatish
+        with open('data.json', 'w', encoding='utf-8') as file:
+            json.dump(response_dict, file, indent=4, ensure_ascii=False)
+        return True
+    else:
+        print(f"So'rovda xatolik: {response.status_code}")
+        return False
+def get_price_for_product():
+    url = "https://smartup.online/b/anor/mxs/mkf/product_price$export"
+
+    auth = HTTPBasicAuth('jamshidbek@falcon', '571++632')
+
+    headers = {
+        'filial_id': '5012602',
+        'project_code': 'trade',
+    }
+
+    data = {
+        
+    }
+
+    response = requests.get(url, json=data, auth=auth, headers=headers)
+
+    if response.status_code == 200:
+        print("So'rov muvaffaqiyatli amalga oshirildi.")
+        response_dict = response.json()
+        with open('prices.json', 'w', encoding='utf-8') as file:
+            json.dump(response_dict, file, indent=4, ensure_ascii=False)
+        return True
+    else:
+        print(f"So'rovda xatolik: {response.status_code}")
+        return False
+
 
 def do_all():
+    info = get_info_for_product()
+    price = get_price_for_product()
     try:
         # 1. results.json faylini o'qib olamiz
         with open('results.json', 'r', encoding='utf-8') as results_file:
@@ -103,4 +168,4 @@ def do_all():
         return False
 
 # Funktsiyani chaqiramiz
-do_all()
+# do_all()
