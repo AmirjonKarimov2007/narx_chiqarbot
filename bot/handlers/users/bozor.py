@@ -106,7 +106,7 @@ async def get_text(message: types.Message):
         await tim.delete()
         response_text = "📌 Topilgan mahsulotlar:\n\n"
         for idx, product in enumerate(found_products, start=1):
-            photo_url = product.get("image_url")
+            photo_url = rf"rasmlar/{product.get('product_id')}.jpg"
             response_text += (
                 f"🔹 <b>{idx}.</b>\n"
                 f"🆔 Product ID: {product.get('product_id')}\n"
@@ -138,7 +138,7 @@ async def get_text(message: types.Message):
 
             if price != "Noma'lum" and price is not None and price != "None":
                 try:
-                    await message.answer_photo(photo=photo_url, caption=response_text, reply_markup=markup)
+                    await message.answer_photo(photo=InputFile(photo_url), caption=response_text, reply_markup=markup)
                 except Exception as e:
                     print(e)
                     await message.answer(response_text, reply_markup=markup)

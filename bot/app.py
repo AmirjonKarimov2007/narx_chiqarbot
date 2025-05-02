@@ -12,16 +12,11 @@ import json
 import pytz
 from main import do_all
 import time
-from photoparser.runner import download_images_sync
-from photoparser.photodatagenerator import main
-# excel_path = main()
-# if excel_path:
-#         download_images_sync(excel_path)
-        
+
 async def on_startup(dispatcher):
     await db.create()
     try:
-        # do_all()
+        do_all()
         
 
         await db.create_table_channel()
