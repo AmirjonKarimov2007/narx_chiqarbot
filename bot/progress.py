@@ -51,6 +51,7 @@ async def update_document(template_path, new_file_path, name, price, usd_price, 
             run.font.size = Pt(14)
             run.bold = True
             para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    # Shtrixkodni qo'shish (agar kerak bo'lsa)
     
     # if os.path.exists(barcode_image_path):
     #     paragraph = doc.add_paragraph()
